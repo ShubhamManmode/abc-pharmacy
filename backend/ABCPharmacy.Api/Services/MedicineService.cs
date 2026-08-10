@@ -4,44 +4,67 @@ namespace ABCPharmacy.Api.Services;
 
 public class MedicineService
 {
-    private const string FileName = "medicines.json";
-    private readonly JsonFileService _jsonFileService;
-
-    public MedicineService(JsonFileService jsonFileService)
+    private static readonly List<Medicine> Medicines = new()
     {
-        _jsonFileService = jsonFileService;
-    }
+        new()
+        {
+            Id = 1,
+            FullName = "Paracetamol 500mg",
+            Notes = "Pain and fever relief",
+            ExpiryDate = new DateTime(2027, 5, 20),
+            Quantity = 25,
+            Price = 25.50m,
+            Brand = "ABC Pharma"
+        },
+        new()
+        {
+            Id = 2,
+            FullName = "Azithromycin 500mg",
+            Notes = "Antibiotic",
+            ExpiryDate = new DateTime(2026, 9, 1),
+            Quantity = 8,
+            Price = 85.00m,
+            Brand = "HealthCare"
+        },
+        new()
+        {
+            Id = 3,
+            FullName = "Cetirizine 10mg",
+            Notes = "Allergy relief",
+            ExpiryDate = new DateTime(2026, 8, 25),
+            Quantity = 15,
+            Price = 40.00m,
+            Brand = "MediLife"
+        }
+    };
 
     public Task<List<Medicine>> GetAllAsync()
     {
-        return _jsonFileService.ReadAsync<Medicine>(FileName);
+        return Task.FromResult(Medicines);
     }
 
-    public async Task<List<Medicine>> SearchAsync(string? search)
+    public Task<List<Medicine>> SearchAsync(string? search)
     {
-        var medicines = await GetAllAsync();
-
         if (string.IsNullOrWhiteSpace(search))
-            return medicines;
+            return Task.FromResult(Medicines);
 
-        return medicines
+        var results = Medicines
             .Where(x => x.FullName.Contains(search, StringComparison.OrdinalIgnoreCase))
             .ToList();
+
+        return Task.FromResult(results);
     }
 
-    public async Task<Medicine?> GetByIdAsync(int id)
+    public Task<Medicine?> GetByIdAsync(int id)
     {
-        var medicines = await GetAllAsync();
-        return medicines.FirstOrDefault(x => x.Id == id);
+        return Task.FromResult(Medicines.FirstOrDefault(x => x.Id == id));
     }
 
-    public async Task<Medicine> AddAsync(CreateMedicineRequest request)
+    public Task<Medicine> AddAsync(CreateMedicineRequest request)
     {
-        var medicines = await GetAllAsync();
-
-        var nextId = medicines.Count == 0
+        var nextId = Medicines.Count == 0
             ? 1
-            : medicines.Max(x => x.Id) + 1;
+            : Medicines.Max(x => x.Id) + 1;
 
         var medicine = new Medicine
         {
@@ -54,32 +77,28 @@ public class MedicineService
             Brand = request.Brand.Trim()
         };
 
-        medicines.Add(medicine);
-        await _jsonFileService.WriteAsync(FileName, medicines);
+        Medicines.Add(medicine);
 
-        return medicine;
+        return Task.FromResult(medicine);
     }
 
-    public async Task<(bool Success, string? Error)> ReduceQuantityAsync(
+    public Task<(bool Success, string? Error)> ReduceQuantityAsync(
         int medicineId,
         int quantity)
     {
-        var medicines = await GetAllAsync();
-        var medicine = medicines.FirstOrDefault(x => x.Id == medicineId);
+        var medicine = Medicines.FirstOrDefault(x => x.Id == medicineId);
 
         if (medicine is null)
-            return (false, "Medicine not found.");
+            return Task.FromResult((false, (string?)"Medicine not found."));
 
         if (quantity <= 0)
-            return (false, "Quantity must be greater than zero.");
+            return Task.FromResult((false, (string?)"Quantity must be greater than zero."));
 
         if (medicine.Quantity < quantity)
-            return (false, $"Only {medicine.Quantity} units are available.");
+            return Task.FromResult((false, (string?)$"Only {medicine.Quantity} units are available."));
 
         medicine.Quantity -= quantity;
 
-        await _jsonFileService.WriteAsync(FileName, medicines);
-
-        return (true, null);
+        return Task.FromResult((true, (string?)null));
     }
 }

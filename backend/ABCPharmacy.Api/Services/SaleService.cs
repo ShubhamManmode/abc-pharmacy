@@ -4,26 +4,20 @@ namespace ABCPharmacy.Api.Services;
 
 public class SaleService
 {
-    private const string FileName = "sales.json";
-
-    private readonly JsonFileService _jsonFileService;
+    private static readonly List<Sale> Sales = [];
     private readonly MedicineService _medicineService;
 
-    public SaleService(
-        JsonFileService jsonFileService,
-        MedicineService medicineService)
+    public SaleService(MedicineService medicineService)
     {
-        _jsonFileService = jsonFileService;
         _medicineService = medicineService;
     }
 
     public Task<List<Sale>> GetAllAsync()
     {
-        return _jsonFileService.ReadAsync<Sale>(FileName);
+        return Task.FromResult(Sales);
     }
 
-    public async Task<(bool Success, Sale? Sale, string? Error)> CreateAsync(
-        CreateSaleRequest request)
+    public async Task<(bool Success, Sale? Sale, string? Error)> CreateAsync(CreateSaleRequest request)
     {
         if (request.QuantitySold <= 0)
             return (false, null, "Quantity sold must be greater than zero.");
@@ -35,17 +29,12 @@ public class SaleService
 
         if (medicine.Quantity < request.QuantitySold)
         {
-            return (
-                false,
-                null,
-                $"Insufficient stock. Available quantity: {medicine.Quantity}.");
+            return (false,null,$"Insufficient stock. Available quantity: {medicine.Quantity}.");
         }
-
-        var sales = await GetAllAsync();
 
         var sale = new Sale
         {
-            Id = sales.Count == 0 ? 1 : sales.Max(x => x.Id) + 1,
+            Id = Sales.Count == 0 ? 1 : Sales.Max(x => x.Id) + 1,
             MedicineId = medicine.Id,
             MedicineName = medicine.FullName,
             QuantitySold = request.QuantitySold,
@@ -54,8 +43,6 @@ public class SaleService
             SaleDate = DateTime.UtcNow
         };
 
-        // The assignment uses JSON storage, so there is no database transaction.
-        // We update inventory first and then persist the sale.
         var reduceResult = await _medicineService.ReduceQuantityAsync(
             request.MedicineId,
             request.QuantitySold);
@@ -63,8 +50,7 @@ public class SaleService
         if (!reduceResult.Success)
             return (false, null, reduceResult.Error);
 
-        sales.Add(sale);
-        await _jsonFileService.WriteAsync(FileName, sales);
+        Sales.Add(sale);
 
         return (true, sale, null);
     }

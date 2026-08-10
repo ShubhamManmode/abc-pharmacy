@@ -6,7 +6,7 @@ A simple Single Page Application for managing medicines and medicine sales.
 
 - ASP.NET Core Web API (.NET 8)
 - React + Vite
-- JSON file storage
+- In-memory static lists
 - REST APIs
 - No database required
 
@@ -20,7 +20,7 @@ A simple Single Page Application for managing medicines and medicine sales.
 - Sell medicines
 - Automatically reduce inventory after a sale
 - View sales history
-- JSON persistence on the server
+- Data is kept in memory while the API is running
 
 ## Project Structure
 
@@ -29,7 +29,6 @@ abc-pharmacy/
 ├── backend/
 │   └── ABCPharmacy.Api/
 │       ├── Controllers/
-│       ├── Data/
 │       ├── Models/
 │       ├── Services/
 │       ├── Program.cs
@@ -85,4 +84,4 @@ git push -u origin main
 
 ## Important
 
-This project intentionally uses JSON files because the assignment explicitly requires server-side JSON storage. For a production application, inventory and sales should use a transactional database.
+This project uses static in-memory lists for simple demo storage. All added medicines, stock changes, and sales reset when the API restarts. For a production application, inventory and sales should use a transactional database.

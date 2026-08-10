@@ -15,7 +15,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddSingleton<JsonFileService>();
 builder.Services.AddSingleton<MedicineService>();
 builder.Services.AddSingleton<SaleService>();
 
